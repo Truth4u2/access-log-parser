@@ -79,13 +79,22 @@ public class Main {
                 ex.printStackTrace();
             }
 
-            List<String> pages200 = stats.getPages();
+            List<String> pages200 = stats.getPages200();
             Statistics.printLimitedPages(pages200, 5);
+
+            List<String> nonExistingPages = stats.getNonExistingPages();
+            Statistics.printLimitedPages404(nonExistingPages, 5);
 
             HashMap<String, Double> osStats = stats.getOSUsage();
             System.out.println("Статистика по ОС:");
             for (String os : osStats.keySet()) {
                 System.out.printf("%s: %.2f%%\n", os, osStats.get(os) * 100);
+            }
+
+            HashMap<String, Double> browserStats = stats.getBrowserUsage();
+            System.out.println("Статистика по браузерам:");
+            for (String browser : browserStats.keySet()) {
+                System.out.printf("%s: %.2f%%\n", browser, browserStats.get(browser) * 100);
             }
 
             validFileCount++;

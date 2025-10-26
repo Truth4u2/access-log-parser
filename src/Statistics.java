@@ -10,6 +10,8 @@ public class Statistics {
     private LocalDateTime maxTime;
     private HashSet<String> pages;
     private HashMap<String, Integer> osCount;
+    private HashSet<String> nonExistingPages;
+    private HashMap<String, Integer> browserCount;
 
     public Statistics() {
         totalTraffic = 0;
@@ -17,6 +19,8 @@ public class Statistics {
         maxTime = null;
         pages = new HashSet<>();
         osCount = new HashMap<>();
+        nonExistingPages = new HashSet<>();
+        browserCount = new HashMap<>();
     }
 
     public void addEntry(LogEntry entry) {
@@ -32,12 +36,19 @@ public class Statistics {
             maxTime = time;
         }
 
-        if (entry.getResponseCode() == 200) {
+        int responseCode = entry.getResponseCode();
+
+        if (responseCode == 200) {
             pages.add(entry.getPath());
+        } else if (responseCode == 404) {
+            nonExistingPages.add(entry.getPath());
         }
 
         String os = entry.getUserAgent().getOs();
         osCount.put(os, osCount.getOrDefault(os, 0) + 1);
+
+        String browser = entry.getUserAgent().getBrowser();
+        browserCount.put(browser, browserCount.getOrDefault(browser, 0) + 1);
     }
 
     public double getTrafficRate() {
@@ -51,8 +62,12 @@ public class Statistics {
         return (double) totalTraffic / hoursBetween;
     }
 
-    public List<String> getPages() {
+    public List<String> getPages200() {
         return new ArrayList<>(pages);
+    }
+
+    public List<String> getNonExistingPages() {
+        return new ArrayList<>(nonExistingPages);
     }
 
     public static void printLimitedPages(List<String> pages, int limit) {
@@ -67,16 +82,44 @@ public class Statistics {
         }
     }
 
+    public static void printLimitedPages404(List<String> pages, int limit) {
+        int total = pages.size();
+        int toShow = Math.min(total, limit);
+        System.out.println("Первые " + toShow + " страниц с кодом ответа 404:");
+        for (int i = 0; i < toShow; i++) {
+            System.out.println(pages.get(i));
+        }
+        if (total > limit) {
+            System.out.println("И еще " + (total - limit) + " страниц с кодом ответа 404");
+        }
+    }
+
     public HashMap<String, Double> getOSUsage() {
         HashMap<String, Double> osUsage = new HashMap<>();
         int totalOSCount = osCount.values().stream().mapToInt(Integer::intValue).sum();
         if (totalOSCount == 0) {
-            return osUsage; // Пустой, если данных нет
+            return osUsage;
         }
         for (String os : osCount.keySet()) {
             double share = (double) osCount.get(os) / totalOSCount;
             osUsage.put(os, share);
         }
         return osUsage;
+    }
+
+    public HashMap<String, Double> getBrowserUsage() {
+        HashMap<String, Double> browserUsage = new HashMap<>();
+        int totalBrowsersCount = 0;
+        if (browserCount != null) {
+            totalBrowsersCount = browserCount.values().stream().mapToInt(Integer::intValue).sum();
+        }
+        if (totalBrowsersCount == 0) {
+            return browserUsage;
+        }
+        for (String browser : browserCount.keySet()) {
+            double share = (double) browserCount.get(browser) / totalBrowsersCount;
+            browserUsage.put(browser, share);
+        }
+        return browserUsage;
     }
 }
