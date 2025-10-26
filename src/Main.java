@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -75,6 +77,15 @@ public class Main {
                 break;
             } catch (Exception ex) {
                 ex.printStackTrace();
+            }
+
+            List<String> pages200 = stats.getPages();
+            Statistics.printLimitedPages(pages200, 5);
+
+            HashMap<String, Double> osStats = stats.getOSUsage();
+            System.out.println("Статистика по ОС:");
+            for (String os : osStats.keySet()) {
+                System.out.printf("%s: %.2f%%\n", os, osStats.get(os) * 100);
             }
 
             validFileCount++;
