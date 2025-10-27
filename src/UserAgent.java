@@ -1,10 +1,16 @@
 public class UserAgent {
+    private final String originalUserAgent;
     private final String os;
     private final String browser;
 
     public UserAgent(String userAgentStr) {
+        this.originalUserAgent = userAgentStr;
         this.os = parseOS(userAgentStr);
         this.browser = parseBrowser(userAgentStr);
+    }
+
+    public String getOriginalUserAgent() {
+        return originalUserAgent;
     }
 
     private String parseOS(String ua) {

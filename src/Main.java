@@ -71,6 +71,12 @@ public class Main {
                 System.out.printf("Общий трафик: %d байт\n", stats.totalTraffic);
                 System.out.printf("Текущая скорость трафика (байт/ч): %.2f\n", stats.getTrafficRate());
 
+                stats.calculateAverages();
+
+                System.out.printf("Среднее количество посещений сайта за час: %.2f\n", stats.getAverageVisitsPerHour());
+                System.out.printf("Среднее количество ошибочных запросов в час: %.2f\n", stats.getAverageErrorsPerHour());
+                System.out.printf("Средняя посещаемость одним пользователем: %.2f\n", stats.getAverageVisitsPerUser());
+
             } catch (LineTooLongException e) {
                 System.out.println("Ошибка: " + e.getMessage());
                 e.printStackTrace();

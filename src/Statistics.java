@@ -1,3 +1,4 @@
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +13,12 @@ public class Statistics {
     private HashMap<String, Integer> osCount;
     private HashSet<String> nonExistingPages;
     private HashMap<String, Integer> browserCount;
+    private double averageVisitsPerHour;
+    private double averageErrorsPerHour;
+    private double averageVisitsPerUser;
+    private int errorCount;
+    private HashSet<String> userIPs;
+    private int totalVisits;
 
     public Statistics() {
         totalTraffic = 0;
@@ -21,6 +28,12 @@ public class Statistics {
         osCount = new HashMap<>();
         nonExistingPages = new HashSet<>();
         browserCount = new HashMap<>();
+        errorCount = 0;
+        userIPs = new HashSet<>();
+        totalVisits = 0;
+        averageVisitsPerHour = 0;
+        averageErrorsPerHour = 0;
+        averageVisitsPerUser = 0;
     }
 
     public void addEntry(LogEntry entry) {
@@ -31,7 +44,6 @@ public class Statistics {
         if (minTime == null || time.isBefore(minTime)) {
             minTime = time;
         }
-
         if (maxTime == null || time.isAfter(maxTime)) {
             maxTime = time;
         }
@@ -49,6 +61,52 @@ public class Statistics {
 
         String browser = entry.getUserAgent().getBrowser();
         browserCount.put(browser, browserCount.getOrDefault(browser, 0) + 1);
+
+        if (responseCode >= 400 && responseCode < 600) {
+            errorCount++;
+        }
+
+        String userAgentStr = entry.getUserAgent().getOriginalUserAgent();
+        if (userAgentStr == null || !userAgentStr.toLowerCase().contains("bot")) {
+            String ip = entry.getIpAddr();
+            if (ip != null) {
+                userIPs.add(ip);
+                totalVisits++;
+            }
+        }
+    }
+
+    public void calculateAverages() {
+        if (minTime == null || maxTime == null) {
+            // Нет данных, средние равны 0
+            this.averageVisitsPerHour = 0;
+            this.averageErrorsPerHour = 0;
+            this.averageVisitsPerUser = 0;
+            return;
+        }
+
+        long hoursBetween = Duration.between(minTime, maxTime).toHours();
+        if (hoursBetween == 0) {
+            hoursBetween = 1;
+        }
+
+        this.averageVisitsPerHour = (double) totalVisits / hoursBetween;
+        this.averageErrorsPerHour = (double) errorCount / hoursBetween;
+
+        int uniqueUsers = userIPs.size();
+        this.averageVisitsPerUser = (uniqueUsers > 0) ? (double) totalVisits / uniqueUsers : 0;
+    }
+
+    public double getAverageVisitsPerHour() {
+        return averageVisitsPerHour;
+    }
+
+    public double getAverageErrorsPerHour() {
+        return averageErrorsPerHour;
+    }
+
+    public double getAverageVisitsPerUser() {
+        return averageVisitsPerUser;
     }
 
     public double getTrafficRate() {
