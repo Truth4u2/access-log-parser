@@ -1,9 +1,9 @@
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.time.ZoneOffset;
+import java.util.*;
 
 public class Statistics {
     long totalTraffic;
@@ -19,6 +19,9 @@ public class Statistics {
     private int errorCount;
     private HashSet<String> userIPs;
     private int totalVisits;
+    private HashMap<Long, Integer> visitsPerSecond;
+    private HashSet<String> referers;
+    private HashMap<String, Integer> userVisitCounts;
 
     public Statistics() {
         totalTraffic = 0;
@@ -34,6 +37,9 @@ public class Statistics {
         averageVisitsPerHour = 0;
         averageErrorsPerHour = 0;
         averageVisitsPerUser = 0;
+        visitsPerSecond = new HashMap<>();
+        referers = new HashSet<>();
+        userVisitCounts = new HashMap<>();
     }
 
     public void addEntry(LogEntry entry) {
@@ -67,18 +73,25 @@ public class Statistics {
         }
 
         String userAgentStr = entry.getUserAgent().getOriginalUserAgent();
-        if (userAgentStr == null || !userAgentStr.toLowerCase().contains("bot")) {
-            String ip = entry.getIpAddr();
-            if (ip != null) {
-                userIPs.add(ip);
-                totalVisits++;
-            }
+        boolean isBot = userAgentStr == null || userAgentStr.toLowerCase().contains("bot");
+        String ip = entry.getIpAddr();
+
+        if (!isBot && ip != null) {
+            userIPs.add(ip);
+            totalVisits++;
+            long epochSecond = entry.getTime().toEpochSecond(ZoneOffset.UTC);
+            visitsPerSecond.put(epochSecond, visitsPerSecond.getOrDefault(epochSecond, 0) + 1);
+            userVisitCounts.put(ip, userVisitCounts.getOrDefault(ip, 0) + 1);
+        }
+
+        String referer = entry.getReferer();
+        if (referer != null && !referer.equals("-")) {
+            referers.add(referer);
         }
     }
 
     public void calculateAverages() {
         if (minTime == null || maxTime == null) {
-            // Нет данных, средние равны 0
             this.averageVisitsPerHour = 0;
             this.averageErrorsPerHour = 0;
             this.averageVisitsPerUser = 0;
@@ -179,5 +192,41 @@ public class Statistics {
             browserUsage.put(browser, share);
         }
         return browserUsage;
+    }
+
+    public int getPeakVisitsPerSecond() {
+        int maxVisits = 0;
+        for (Map.Entry<Long, Integer> entry : visitsPerSecond.entrySet()) {
+            if (entry.getValue() > maxVisits) {
+                maxVisits = entry.getValue();
+            }
+        }
+        return maxVisits;
+    }
+
+    public List<String> getRefererDomains() {
+        Set<String> domains = new HashSet<>();
+        for (String referer : referers) {
+            try {
+                URL url = new URL(referer);
+                String host = url.getHost();
+                if (host.startsWith("www.")) {
+                    host = host.substring(4);
+                }
+                domains.add(host);
+            } catch (MalformedURLException e) {
+            }
+        }
+        return new ArrayList<>(domains);
+    }
+
+    public int getMaxVisitsPerUser() {
+        int maxVisits = 0;
+        for (int count : userVisitCounts.values()) {
+            if (count > maxVisits) {
+                maxVisits = count;
+            }
+        }
+        return maxVisits;
     }
 }

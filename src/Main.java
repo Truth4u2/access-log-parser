@@ -76,6 +76,8 @@ public class Main {
                 System.out.printf("Среднее количество посещений сайта за час: %.2f\n", stats.getAverageVisitsPerHour());
                 System.out.printf("Среднее количество ошибочных запросов в час: %.2f\n", stats.getAverageErrorsPerHour());
                 System.out.printf("Средняя посещаемость одним пользователем: %.2f\n", stats.getAverageVisitsPerUser());
+                System.out.println("Пиковое количество посещений сайта в секунду: " + stats.getPeakVisitsPerSecond());
+                System.out.println("Максимальное количество посещений одним пользователем: " + stats.getMaxVisitsPerUser());
 
             } catch (LineTooLongException e) {
                 System.out.println("Ошибка: " + e.getMessage());
@@ -101,6 +103,12 @@ public class Main {
             System.out.println("Статистика по браузерам:");
             for (String browser : browserStats.keySet()) {
                 System.out.printf("%s: %.2f%%\n", browser, browserStats.get(browser) * 100);
+            }
+
+            List<String> refererDomains = stats.getRefererDomains();
+            System.out.println("Уникальные домены:");
+            for (String domain : refererDomains) {
+                System.out.println(domain);
             }
 
             validFileCount++;
